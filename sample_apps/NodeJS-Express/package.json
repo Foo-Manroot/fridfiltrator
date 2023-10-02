@@ -1,0 +1,11 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Alles guet ;)\" && exit 0"
+  },
+  "author": "",
+  "license": "ISC"
+}

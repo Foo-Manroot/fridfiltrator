@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+    app:
+        container_name: app
+        image: app
+        restart: always
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: base
+        ports:
+            - "1122:1122"
+            - "127.0.0.1:3344:3344" # Implant
+        cap_add:
+            - SYS_PTRACE # Required to debug the target application
