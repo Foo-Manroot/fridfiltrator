@@ -1,0 +1,11 @@
+# Share only the .svg version. It's easier to show on the README and is still editable by draw.io
+*.drawio
+
+# Results of compiling or running different components
+redirector/server
+redirector/events.db
+*.class
+*.pyc
+__pycache__/*
+Burp extension/Fridfiltrator/.gradle/*
+Burp extension/Fridfiltrator/app/build/*
