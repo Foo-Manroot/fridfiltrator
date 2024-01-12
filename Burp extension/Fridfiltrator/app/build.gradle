@@ -19,9 +19,9 @@ repositories {
 dependencies {
     implementation 'net.portswigger.burp.extensions:montoya-api:+'
 
-	implementation 'jakarta.xml.bind:jakarta.xml.bind-api:+'
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:+'
 
-	implementation 'com.macasaet.fernet:fernet-java8:+'
+    implementation 'com.macasaet.fernet:fernet-java8:+'
 }
 
 application {

@@ -1,25 +1,33 @@
 package Fridfiltrator;
 
+import Fridfiltrator.listenerPoller.ListenerPoller;
+import Fridfiltrator.helpers.ApiWrapper;
+import Fridfiltrator.helpers.Logger;
+import Fridfiltrator.helpers.Storage;
+import Fridfiltrator.ui.UIController;
 import burp.api.montoya.BurpExtension;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.extension.ExtensionUnloadingHandler;
-import java.net.InetAddress;
 
 public class Fridfiltrator implements BurpExtension {
 
-	private MontoyaApi api;
-
-	private Poller poller;
+	private ListenerPoller poller;
 
 	@Override
 	public void initialize (MontoyaApi api)
-	{
-		this.api = api;
+	{       
+                /* Initialise the helper singletons */
+                Storage.getInstance ().init (api.persistence ());
+                Logger.getLogger ().init (api.logging ());
+                ApiWrapper.getInstance ().init (api);
+
 		// set extension name
 		api.extension ().setName ("Fridfiltrator");
 
-		poller = new Poller (InetAddress.getLoopbackAddress (), 9999, api);
-		poller.start ();
+                UIController.createUi (api);
+
+//		poller = new ListenerPoller (InetAddress.getLoopbackAddress (), 9999);
+//		poller.start ();
 
 		api.extension ().registerUnloadingHandler(new ExtensionUnloadHandler());
 	}
@@ -27,9 +35,12 @@ public class Fridfiltrator implements BurpExtension {
 
 	private class ExtensionUnloadHandler implements ExtensionUnloadingHandler {
 		@Override
-		public void extensionUnloaded() {
-			api.logging ().logToOutput("Extension was unloaded.");
-			poller.shutdown ();
+		public void extensionUnloaded () {
+			Logger.getLogger ().log ("Extension was unloaded.");
+
+                        if (poller != null) {
+                            poller.shutdown ();
+                        }
 		}
 	}
 }
