@@ -523,7 +523,7 @@ public class TabGUI extends javax.swing.JPanel {
 
         serverTypeTabPane.setSelectedIndex (selectedIdx);
         storage.setServerType (selectedType);
-        log.log ("Server type selected: " + selectedType.friendlyName ());
+//        log.log ("Server type selected: " + selectedType.friendlyName ());
     }//GEN-LAST:event_serverTypeComboBoxItemStateChanged
 
     private void setCollabKeyButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setCollabKeyButtonActionPerformed
@@ -553,10 +553,10 @@ public class TabGUI extends javax.swing.JPanel {
 
     private void runHealthCheckButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runHealthCheckButtonActionPerformed
 
-        // Lambda to log to both the extension's logger and the UI's text area
+        // Lambda to log the debugging messages from the health checks
         final Consumer<String> logger = (String msg) -> {
 
-            log.log (msg);
+//            log.log (msg);
 
             Date date = new Date ();
             SimpleDateFormat sdf = new SimpleDateFormat ("[yyyy-MM-dd HH:mm:ss.SSS] ");
@@ -679,21 +679,34 @@ public class TabGUI extends javax.swing.JPanel {
     }//GEN-LAST:event_genBundleButtonActionPerformed
 
     private void startPollerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startPollerButtonActionPerformed
-        
-        // Lambda to log to both the extension's logger and the UI's text area
+
+        // Lambda to log the debugging messages from the poller
         final Consumer<String> logger = (String msg) -> {
 
-            log.log (msg);
+//            log.log (msg);
 
             Date date = new Date ();
             SimpleDateFormat sdf = new SimpleDateFormat ("[yyyy-MM-dd HH:mm:ss.SSS] ");
             debugPollingTextArea.append (sdf.format (date) + msg + "\n");
         };
+        
+        // Lambda to print the final event in the UI
+        final Consumer<String> eventHandler = (String msg) -> {
+
+            Date date = new Date ();
+            SimpleDateFormat sdf = new SimpleDateFormat ("[yyyy-MM-dd HH:mm:ss.SSS] ");
+            outputTextArea.append (sdf.format (date) + msg + "\n");
+
+            /* It would be nice to light up the extension tab, but it doesn't
+            seem to be currently (as of 2024-01-14) possible with the Montoya API:
+                https://forum.portswigger.net/thread/suitab-highlight-when-action-is-performed-in-contextmenu-d342c438
+            */
+        };
 
         try {
 
             reloadPoller ();
-            poller.start (logger);
+            poller.start (logger, eventHandler);
             logger.accept ("Started polling");
 
         } catch (Exception ex) {
@@ -712,7 +725,7 @@ public class TabGUI extends javax.swing.JPanel {
         if (poller != null) {
 
             poller.stop ();
-            log.log ("Stopped polling");
+//            log.log ("Stopped polling");
             debugPollingTextArea.append ("Stopped polling\n");
         }
         
