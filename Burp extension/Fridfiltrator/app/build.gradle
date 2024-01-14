@@ -21,7 +21,8 @@ dependencies {
 
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:+'
 
-    implementation 'com.macasaet.fernet:fernet-java8:+'
+    implementation 'com.macasaet.fernet:fernet-java8:1.5.0'
+    implementation 'dnsjava:dnsjava:3.5.3'
 }
 
 application {

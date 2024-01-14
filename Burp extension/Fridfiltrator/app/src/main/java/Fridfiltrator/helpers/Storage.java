@@ -137,8 +137,8 @@ public class Storage {
     public String getCollaboratorKey () {
         
         String retVal = this.persistence
-                                .extensionData ()
-                                .getString (K_COLLABORATOR_KEY);
+                            .extensionData ()
+                            .getString (K_COLLABORATOR_KEY);
 
         return retVal;
     }
@@ -171,20 +171,22 @@ public class Storage {
      *      or it wasn't a valid IP (v4 or v6) address.
      */
     public InetAddress getListenerAddr () {
-        
+
         ByteArray ba = this.persistence
-                                .extensionData ()
-                                .getByteArray (K_LISTENER_ADDR);
+                            .extensionData ()
+                            .getByteArray (K_LISTENER_ADDR);
 
         InetAddress retVal = null;
-        
+
         try {
-            retVal = InetAddress.getByAddress (
+            if (ba != null) {
+                retVal = InetAddress.getByAddress (
                     ba.getBytes ()
-            );
+                );
+            }
         } catch (UnknownHostException ex) {
 
-            Logger.getLogger ().error (ex.toString ());
+            Logger.getLogger ().error (ex);
         }
 
         return retVal;
@@ -219,8 +221,8 @@ public class Storage {
     public int getListenerPort () {
         
         Integer retVal = this.persistence
-                                .extensionData ()
-                                .getInteger (K_LISTENER_PORT);
+                            .extensionData ()
+                            .getInteger (K_LISTENER_PORT);
         
         if ( (retVal == null)
             || (retVal < 1)

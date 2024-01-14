@@ -171,4 +171,19 @@ public class Logger {
 //
 //        log.logToError (getPrefix () + message, cause);
 //    }
+    
+    /* So, instead, I had to use this deprecated method... */
+    
+    /**
+     * Prints a stack trace to the current extension's standard error stream.
+     * 
+     * @param cause
+     *              The cause of the error being logged.
+     */
+    @SuppressWarnings("deprecation")
+    public void error (Throwable cause) {
+
+        cause.printStackTrace (log.error ());
+    }
+    
 }

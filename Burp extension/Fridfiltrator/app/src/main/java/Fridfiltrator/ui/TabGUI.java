@@ -1,17 +1,21 @@
 package Fridfiltrator.ui;
 
-import Fridfiltrator.Poller;
-import Fridfiltrator.collabPoller.CollabPoller;
+import Fridfiltrator.poller.Poller;
+import Fridfiltrator.poller.CollabPoller;
 import Fridfiltrator.helpers.ApiWrapper;
 import Fridfiltrator.helpers.Logger;
 import Fridfiltrator.helpers.Storage;
 import Fridfiltrator.helpers.Storage.SERVER_TYPE;
-import Fridfiltrator.listenerPoller.ListenerPoller;
+import Fridfiltrator.poller.ListenerPoller;
 import burp.api.montoya.collaborator.CollaboratorClient;
 import burp.api.montoya.collaborator.SecretKey;
+import burp.api.montoya.extension.ExtensionUnloadingHandler;
 import java.awt.event.ItemEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.function.Consumer;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
 
@@ -20,7 +24,8 @@ public class TabGUI extends javax.swing.JPanel {
     private final Logger log;
     private final Storage storage;
     private final ApiWrapper api;
-    
+    private Poller poller = null;
+
     /**
      * Creates new form NewJPanel
      */
@@ -29,6 +34,10 @@ public class TabGUI extends javax.swing.JPanel {
         this.log = Logger.getLogger ();
         this.storage = Storage.getInstance ();
         this.api = ApiWrapper.getInstance ();
+        
+        api.getApis ().extension ().registerUnloadingHandler (
+            new ExtensionUnloadHandler ()
+        );
 
         initComponents ();
         
@@ -64,11 +73,21 @@ public class TabGUI extends javax.swing.JPanel {
                 listenerPortSpinner.setValue (
                         storage.getListenerPort () // always returns a valid int
                 );
+                
+                InetAddress addr = storage.getListenerAddr ();
+                
+                if (addr != null) {
+
+                    listenerAddrTextField.setText (addr.getHostAddress ());
+                }
 
                 break;
         }
 
-        
+        /* Auto-scroll */
+        new SmartScroller (outputScrollPane);
+        new SmartScroller (debugPollingScrollPane);
+        new SmartScroller (healthCheckScrollPane);
     }
 
     /**
@@ -85,6 +104,51 @@ public class TabGUI extends javax.swing.JPanel {
         log.log ("Generated a new collaborator secret key: " + key.toString ());
 
         return key.toString ();
+    }
+
+    /**
+     * Uses the configured data to instantiate a new Poller by modifying the
+     * {@link TabGUI#poller} attribute.
+     * 
+     * @throws IllegalArgumentException
+     *              If the configuration is not correct and the poller couldn't
+     *          be initialised.
+     */
+    private void reloadPoller () throws IllegalArgumentException {
+
+        if ( (poller != null)
+            && poller.isRunning ()  ) {
+
+            poller.stop ();
+        }
+
+        /* The healthcheck must be verified differently if it's a self-hosted
+        server or if it's a Collaborator server */
+        SERVER_TYPE serverType = (SERVER_TYPE)serverTypeComboBox.getSelectedItem ();
+
+        switch (serverType) {
+
+            case COLLABORATOR:
+
+                String key = storage.getCollaboratorKey ();
+
+                this.poller = new CollabPoller (key);
+                break;
+
+            case SELF_HOSTED:
+                
+                InetAddress addr = storage.getListenerAddr ();
+                int port = storage.getListenerPort ();
+
+                this.poller = new ListenerPoller (addr, port);
+                break;
+
+            default:
+                throw new IllegalArgumentException ("Error!\nServer of type " +
+                        serverTypeComboBox.getSelectedItem ().toString () +
+                        " is not implemented!"
+                );
+        }
     }
 
     /**
@@ -167,11 +231,16 @@ public class TabGUI extends javax.swing.JPanel {
         runHealthCheckButton = new javax.swing.JButton();
         filler7 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel5 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        healthCheckScrollPane = new javax.swing.JScrollPane();
         healthCheckTextArea = new javax.swing.JTextArea();
         outputTab = new javax.swing.JPanel();
-        jScrollPane3 = new javax.swing.JScrollPane();
+        outputScrollPane = new javax.swing.JScrollPane();
         outputTextArea = new javax.swing.JTextArea();
+        jPanel13 = new javax.swing.JPanel();
+        startPollerButton = new javax.swing.JButton();
+        stopPollerButton = new javax.swing.JButton();
+        debugPollingScrollPane = new javax.swing.JScrollPane();
+        debugPollingTextArea = new javax.swing.JTextArea();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -378,12 +447,11 @@ public class TabGUI extends javax.swing.JPanel {
         jLabel5.setText("Debug output:");
         jPanel5.add(jLabel5);
 
-        healthCheckTextArea.setEditable(false);
         healthCheckTextArea.setColumns(20);
         healthCheckTextArea.setRows(5);
-        jScrollPane1.setViewportView(healthCheckTextArea);
+        healthCheckScrollPane.setViewportView(healthCheckTextArea);
 
-        jPanel5.add(jScrollPane1);
+        jPanel5.add(healthCheckScrollPane);
 
         configTab.add(jPanel5);
 
@@ -394,11 +462,37 @@ public class TabGUI extends javax.swing.JPanel {
         outputTextArea.setEditable(false);
         outputTextArea.setColumns(20);
         outputTextArea.setRows(5);
-        outputTextArea.setText("Here will appear your application interactions (if there are any)...\n");
+        outputTextArea.setText("Here will appear application interactions appear (if there are any):\n\n");
         outputTextArea.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        jScrollPane3.setViewportView(outputTextArea);
+        outputScrollPane.setViewportView(outputTextArea);
 
-        outputTab.add(jScrollPane3, java.awt.BorderLayout.CENTER);
+        outputTab.add(outputScrollPane, java.awt.BorderLayout.CENTER);
+
+        startPollerButton.setText("Start poller");
+        startPollerButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                startPollerButtonActionPerformed(evt);
+            }
+        });
+        jPanel13.add(startPollerButton);
+
+        stopPollerButton.setText("Stop poller");
+        stopPollerButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                stopPollerButtonActionPerformed(evt);
+            }
+        });
+        jPanel13.add(stopPollerButton);
+
+        outputTab.add(jPanel13, java.awt.BorderLayout.NORTH);
+
+        debugPollingTextArea.setColumns(20);
+        debugPollingTextArea.setRows(5);
+        debugPollingTextArea.setText("Debug output:\n");
+        debugPollingTextArea.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
+        debugPollingScrollPane.setViewportView(debugPollingTextArea);
+
+        outputTab.add(debugPollingScrollPane, java.awt.BorderLayout.PAGE_END);
 
         jTabbedPane2.addTab("Output", outputTab);
 
@@ -429,7 +523,7 @@ public class TabGUI extends javax.swing.JPanel {
 
         serverTypeTabPane.setSelectedIndex (selectedIdx);
         storage.setServerType (selectedType);
-        log.log ("New server type selected: " + selectedType.friendlyName ());
+        log.log ("Server type selected: " + selectedType.friendlyName ());
     }//GEN-LAST:event_serverTypeComboBoxItemStateChanged
 
     private void setCollabKeyButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setCollabKeyButtonActionPerformed
@@ -456,86 +550,93 @@ public class TabGUI extends javax.swing.JPanel {
         collaboratorKeyTextField.setText (key);
     }//GEN-LAST:event_genCollabKeyButtonActionPerformed
 
+
     private void runHealthCheckButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runHealthCheckButtonActionPerformed
-        
-        /* The healthcheck must be verified differently if it's a self-hosted
-        server or if it's a Collaborator server */
-        int serverType = serverTypeComboBox.getSelectedIndex ();
-        boolean success = false;
-        Poller poller = null;
 
-        switch (serverType) {
+        // Lambda to log to both the extension's logger and the UI's text area
+        final Consumer<String> logger = (String msg) -> {
 
-            case 0: //Collaborator
-                try {
+            log.log (msg);
 
-                    String key = storage.getCollaboratorKey ();
-                    poller = new CollabPoller (key);
+            Date date = new Date ();
+            SimpleDateFormat sdf = new SimpleDateFormat ("[yyyy-MM-dd HH:mm:ss.SSS] ");
+            healthCheckTextArea.append (sdf.format (date) + msg + "\n");
+        };
 
-                } catch (Exception ex) {
-
-                    log.error (ex.getMessage ());
-                    //healthCheckTextArea.setForeground (Color.red);
-                    healthCheckTextArea.append ("Exception initialising the " +
-                            "poller: " + ex.getLocalizedMessage () + "\n"
-                    );
-                }
-
-            case 1: // Self-hosted
-                try {
-
-                    InetAddress addr = storage.getListenerAddr ();
-                    int port = storage.getListenerPort ();
-
-                    poller = new ListenerPoller (addr, port);
-
-                } catch (Exception ex) {
-
-                    log.error (ex.getMessage ());
-                    //healthCheckTextArea.setForeground (Color.red);
-                    healthCheckTextArea.append ("Exception initialising the " +
-                            "poller: " + ex.getLocalizedMessage () + "\n"
-                    );
-                }
-
-                break;
-
-            default:
-                String errMsg = "Error!\nServer of type " +
-                        serverTypeComboBox.getSelectedItem ().toString () +
-                        " is not implemented!";
-                
-                healthCheckTextArea.append (errMsg);
-                log.error (errMsg);
-
-                /* We continue without initialising `poller`, which will force a
-                (controlled) exception further down this method */
-                break;
-        }
         
         try {
 
-            if (poller == null) {
-                // It will be caught by the handler a couple of lines below
-                throw new NullPointerException ("The poller wasn't properly initialised");
+            if ( (poller != null) 
+                && poller.isRunning ()) {
+                
+                int selected_option = JOptionPane.showConfirmDialog (
+                        this,
+                        "There is a polling session already running. Do you "
+                        + "want to stop it before running the health check?\n\n"
+                        + "If you click 'No', the current running configuration "
+                        + "will be used to perform the checks."
+                );
+
+                switch (selected_option) {
+                    case JOptionPane.YES_OPTION:
+                        
+                        poller.stop ();
+                        healthCheckTextArea.append ("Polling stopped.\n");                    
+                        reloadPoller ();
+                        break;
+                        
+                    case JOptionPane.CANCEL_OPTION:
+
+                        healthCheckTextArea.append ("Healthcheck cancelled.\n");
+                        return;
+                }
+
+            } else {
+                
+                reloadPoller ();
             }
-            
-            success = poller.healthCheck (healthCheckTextArea);
 
-        } catch (Exception ex) {
+            /* If the previous step failed, which would imply that the poller
+            was not correctly instantiated, an exception wouldn've been thrown.
+            Therefore, if it reached this point, it means that a poller exist */
+            new Thread ( () -> {
 
-            log.error (ex.getMessage ());
-            //healthCheckTextArea.setForeground (Color.red);
-            healthCheckTextArea.append ("Exception when running the " +
-                    "health checks: " + ex.getLocalizedMessage () + "\n"
+                boolean success = false;
+                
+                try {
+                    success = poller.healthCheck (logger);
+
+                } catch (Exception ex) {
+
+                    log.error (ex);
+                    healthCheckTextArea.append ("Exception running the " +
+                            "health checks: " + ex.getLocalizedMessage () + "\n"
+                    );
+                }
+
+                if (success) {
+
+                    healthCheckTextArea.append (
+                            "Success!\nThe poller is ready to be used.\n"
+                    );
+
+                } else {
+
+                    healthCheckTextArea.append (
+                            "Please, verify your configuration.\n"
+                    );
+                }
+
+            }).start ();
+
+        } catch (IllegalArgumentException ex) {
+
+            log.error (ex);
+            healthCheckTextArea.append ("Exception initialising the " +
+                    "poller: " + ex.getLocalizedMessage () + "\n"
             );
         }
 
-        if ( ! success) {
-
-            healthCheckTextArea.append ("Please, verify your configuration");
-        }
-        
     }//GEN-LAST:event_runHealthCheckButtonActionPerformed
 
     private void setAddrButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setAddrButtonActionPerformed
@@ -552,12 +653,12 @@ public class TabGUI extends javax.swing.JPanel {
 
         } catch (UnknownHostException ex) {
 
-            log.error (ex.getLocalizedMessage());
+            log.error (ex);
             JOptionPane.showMessageDialog (
                 this,
                 ex.getLocalizedMessage (),
                 "Error!",
-                JOptionPane.WARNING_MESSAGE
+                JOptionPane.ERROR_MESSAGE
             );
         }
     }//GEN-LAST:event_setAddrButtonActionPerformed
@@ -577,10 +678,52 @@ public class TabGUI extends javax.swing.JPanel {
         
     }//GEN-LAST:event_genBundleButtonActionPerformed
 
+    private void startPollerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startPollerButtonActionPerformed
+        
+        // Lambda to log to both the extension's logger and the UI's text area
+        final Consumer<String> logger = (String msg) -> {
+
+            log.log (msg);
+
+            Date date = new Date ();
+            SimpleDateFormat sdf = new SimpleDateFormat ("[yyyy-MM-dd HH:mm:ss.SSS] ");
+            debugPollingTextArea.append (sdf.format (date) + msg + "\n");
+        };
+
+        try {
+
+            reloadPoller ();
+            poller.start (logger);
+            logger.accept ("Started polling");
+
+        } catch (Exception ex) {
+
+            log.error (ex);
+            JOptionPane.showMessageDialog (this, "Exception initialising the " +
+                    "poller: " + ex.getLocalizedMessage (),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }//GEN-LAST:event_startPollerButtonActionPerformed
+
+    private void stopPollerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopPollerButtonActionPerformed
+
+        if (poller != null) {
+
+            poller.stop ();
+            log.log ("Stopped polling");
+            debugPollingTextArea.append ("Stopped polling\n");
+        }
+        
+    }//GEN-LAST:event_stopPollerButtonActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField collaboratorKeyTextField;
     private javax.swing.JPanel configTab;
+    private javax.swing.JScrollPane debugPollingScrollPane;
+    private javax.swing.JTextArea debugPollingTextArea;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler10;
     private javax.swing.Box.Filler filler11;
@@ -618,6 +761,7 @@ public class TabGUI extends javax.swing.JPanel {
     private javax.swing.Box.Filler filler9;
     private javax.swing.JButton genBundleButton;
     private javax.swing.JButton genCollabKeyButton;
+    private javax.swing.JScrollPane healthCheckScrollPane;
     private javax.swing.JTextArea healthCheckTextArea;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -631,6 +775,7 @@ public class TabGUI extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel12;
+    private javax.swing.JPanel jPanel13;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
@@ -639,14 +784,13 @@ public class TabGUI extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTabbedPane jTabbedPane2;
     private javax.swing.JTextPane jTextPane1;
     private javax.swing.JTextField listenerAddrTextField;
     private javax.swing.JSpinner listenerPortSpinner;
+    private javax.swing.JScrollPane outputScrollPane;
     private javax.swing.JPanel outputTab;
     private javax.swing.JTextArea outputTextArea;
     private javax.swing.JButton runHealthCheckButton;
@@ -655,5 +799,18 @@ public class TabGUI extends javax.swing.JPanel {
     private javax.swing.JButton setAddrButton;
     private javax.swing.JButton setCollabKeyButton;
     private javax.swing.JButton setPortButton;
+    private javax.swing.JButton startPollerButton;
+    private javax.swing.JButton stopPollerButton;
     // End of variables declaration//GEN-END:variables
+
+    private class ExtensionUnloadHandler implements ExtensionUnloadingHandler {
+        @Override
+        public void extensionUnloaded () {
+            Logger.getLogger ().log ("The extension was unloaded.");
+
+            if (poller != null) {
+                poller.stop ();
+            }
+        }
+    }
 }

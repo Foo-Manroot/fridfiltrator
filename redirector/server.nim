@@ -132,7 +132,7 @@ proc handle_connection(
     let data = msg.data
 
     echo "======= NEW PACKET RECEIVED ========"
-    echo &"message data: {data}"
+    echo &"message data: {repr(data)}"
     echo &"from addr: {msg.address}"
     echo &"with port: {msg.port.int}"
 
