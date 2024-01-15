@@ -1,15 +1,19 @@
 # Index
 
 [Introduction](#intro)
+
 [Rationale](#rationale)
+
 [Usage](#usage)
   1. [Running the target app](#run_target_app)
   2. [Instrument the target app](#instrument_app)
   3. [Run the redirecotr](#start_redirector) (or not, if you use Collaborator)
   4. [Compile and add the extensions to Burp](#add_extension)
   5. [See your interactions popping up](#watch_interactions)
+
 [Contributing](#contributing)
   - [Project structure](#project_structure)
+
 [References](#references)
 
 
