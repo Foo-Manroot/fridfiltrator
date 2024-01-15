@@ -17,7 +17,8 @@
 [References](#references)
 
 
-<a name="intro">
+<a name="intro"/>
+
 # Dafuq is dis shit?
 
 Fridfiltrator is a tool to instrument web applications and obtain some insights about the path our payloads take when the application is processing them.
@@ -58,7 +59,8 @@ A diagram showing these relationships can be seen below:
 ![A network diagram showing how Fridfiltrator is meant to work](fridfiltrator-concept.drawio.svg)
 
 
-<a name="rationale">
+<a name="rationale"/>
+
 # But why?
 
 Have you ever tested an API endpoint that you have no idea what it does, but it _always_ returns "200 OK"?
@@ -86,10 +88,12 @@ And, besides that, I found nothing.
 If you know of any other project with the same concept as Fridfiltrator, please open an [Issue](https://github.com/Foo-Manroot/fridfiltrator/issues) here and I will take a look.
 Maybe my efforts are better directed by contributing to those other tools instead.
 
-<a name="usage">
+<a name="usage"/>
+
 # Ok, you convinced me. How do I use this?
 
-<a name="run_target_app">
+<a name="run_target_app"/>
+
 ## 1: Run the target app
 
 For testing, I created a bunch of test apps "vulnerable" to a path traversal (they're actually not exploitable... but whatever, that's not the point here, just use it agains WebGOAT if you want to pwn some stuff).
@@ -108,7 +112,8 @@ Press CTRL+C to quit
 If it doesn't work, check if you have all dependencies (Flask, basically) installed or use another of the sample apps (except the Go one, that doesn't work because reasons)
 
 
-<a name="instrument_app">
+<a name="instrument_app"/>
+
 ## 2: Instrument the app
 
 For this step, you need to be able to debug the process; so either assign the correct capabilities to the binary, or just run this as root.
@@ -130,7 +135,8 @@ Press ENTER to finish the debugging session...
 
 Make sure you have Frida and its Python bindings installed: `pip3 install frida frida-tools`
 
-<a name="start_redirector">
+<a name="start_redirector"/>
+
 ## 3: Start the redirector
 
 ```
@@ -142,7 +148,8 @@ $ nim c -r server.nim
 Now accepting connections on udp://127.0.0.1:9999
 ```
 
-<a name="add_extension">
+<a name="add_extension"/>
+
 ## Step 4: Add the extension to Burp
 
 [!NOTE]
@@ -165,7 +172,8 @@ For now, all the output is simply sent to the extensions logging window:
 ![Screenshot of the extension showing some output](img/extension-stdout.png)
 
 
-<a name="watch_interactions">
+<a name="watch_interactions"/>
+
 ## Step 5: Send some requests to the app and watch the interaction
 
 ```
@@ -207,7 +215,8 @@ As a tester, I would see that the first request generates a `read()` to `sample_
 For my last attempt, I send the usual path traversal payload to confirm I can indeed read any file, which does indeed trigger a `read()` of `/etc/passwd`.
 
 
-<a name="contributing">
+<a name="contributing"/>
+
 # Contributing
 
 Do you want to contribute?
@@ -216,7 +225,8 @@ Great! Thank you :)
 I don't really have any requirements (this project isn't really big enough, and my code is not precisely good either, ngl), so feel free to just open a [pull request](https://github.com/Foo-Manroot/fridfiltrator/pulls).
 [Issues](https://github.com/Foo-Manroot/fridfiltrator/issues) are also welcomed and will be addressed to the best of my capacity.
 
-<a name="project_structure">
+<a name="project_structure"/>
+
 ## Project structure
 
 This is the main directory structure of the project:
@@ -254,7 +264,8 @@ This is the main directory structure of the project:
         └── 2
 ```
 
-<a name="references">
+<a name="references"/>
+
 # References
 
 - https://frida.re/ // https://github.com/frida/frida - The base instrumentation engine used by this project
