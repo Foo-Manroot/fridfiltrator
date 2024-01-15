@@ -19,6 +19,8 @@ public abstract class Poller {
 
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private ScheduledFuture<?> schedule;
+    private PollingRunnable job;
+    private volatile boolean RUNNING = false;
 
     /**
      * Performs a health check on the poller.
@@ -68,12 +70,14 @@ public abstract class Poller {
     public void start (Consumer<String> logger, Consumer<String> handler) {
 
         scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor (1);
+        job = new PollingRunnable (logger, handler);
         schedule = scheduledThreadPoolExecutor.scheduleAtFixedRate (
-            new PollingRunnable (logger, handler),
+            job,
             0,
             5,
             TimeUnit.SECONDS
         );
+        RUNNING = true;
 
         logger.accept ("Started polling every 5 seconds");
     }
@@ -91,10 +95,12 @@ public abstract class Poller {
             scheduledThreadPoolExecutor.shutdown ();
             Logger.getLogger ().log ("Poller stopped");
         }
+        RUNNING = false;
     }
 
     /**
-     * Checks if the polling thread is running.
+     * Checks if the polling thread was started at some point (although it might
+     * be that the poller is not <i>right now</i> being executed, just waiting).
      * 
      * @return 
      *              {@code true} if the polling thread is running,
@@ -102,11 +108,10 @@ public abstract class Poller {
      */
     public boolean isRunning () {
 
-        return (schedule != null)
-                && schedule.state ().equals (Future.State.RUNNING);
+        return RUNNING;
     }
 
-    
+
     /**************************************/
     /**************************************/
     /**************************************/
@@ -121,11 +126,11 @@ public abstract class Poller {
         private final Key encryption_key = new Key ("0KET_f5D_YcaSQicPfhEUJG0aIYDps0sFkgcj_BC9fQ=");
 
         private final Validator<String> validator;
-        
+
         private final Consumer<String> logger;
-        
+
         private final Consumer<String> handler;
-        
+
         /**
          * Constructor.
          * 
