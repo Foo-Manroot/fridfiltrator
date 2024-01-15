@@ -1,3 +1,19 @@
+# Index
+
+[Introduction](#intro)
+[Rationale](#rationale)
+[Usage](#usage)
+  1. [Running the target app](#run_target_app)
+  2. [Instrument the target app](#instrument_app)
+  3. [Run the redirecotr](#start_redirector) (or not, if you use Collaborator)
+  4. [Compile and add the extensions to Burp](#add_extension)
+  5. [See your interactions popping up](#watch_interactions)
+[Contributing](#contributing)
+  - [Project structure](#project_structure)
+[References](#references)
+
+
+<a name="intro">
 # Dafuq is dis shit?
 
 Fridfiltrator is a tool to instrument web applications and obtain some insights about the path our payloads take when the application is processing them.
@@ -6,7 +22,7 @@ This is (apparently) called IAST: Interactive Application Security Testing.
 The goal is to help discovering hidden vulnerabilities that would take too much time to properly test for, due to the lack of feedback.
 
 An example use-case: a file being read (with some raw user-input to generate the filename) in the background and sent to another process to generate a report that we can download 5 minutes later.
-Sure, we can test that if we have nothing else to do with our lives; but I got shit to do with my life besides pentesting...
+Sure, we can test that if we have nothing else to do with our lives; but I got shit to do with besides pentesting...
 
 It could also be useful for research, to minimise the setup time and help automatise fuzzing (I guess? it's not really my end goal, but I could see myself using it for vuln research).
 
@@ -34,15 +50,15 @@ For this revival of the Infiltrator's concept, I need the following components a
   - The client, who happily run the implant we send them on their app server :)
   - A redirector, which could be a Collaborator instance or a custom developed server, to receive the events sent by the implant and redirect them to the tester's Burp extension
 
-A diagram showing thes relationships can be seen below:
+A diagram showing these relationships can be seen below:
 ![A network diagram showing how Fridfiltrator is meant to work](fridfiltrator-concept.drawio.svg)
 
 
-
+<a name="rationale">
 # But why?
 
 Have you ever tested an API endpoint that you have no idea what it does, but it _always_ returns "200 OK"?
-Maybe the endpoint is vulnerable as fuck, but your
+Maybe the endpoint is vulnerable as fuck, but you just don't have enough time or visibility to actually discover that.
 Yeah, I also hate that...
 
 
@@ -66,9 +82,10 @@ And, besides that, I found nothing.
 If you know of any other project with the same concept as Fridfiltrator, please open an [Issue](https://github.com/Foo-Manroot/fridfiltrator/issues) here and I will take a look.
 Maybe my efforts are better directed by contributing to those other tools instead.
 
-
+<a name="usage">
 # Ok, you convinced me. How do I use this?
 
+<a name="run_target_app">
 ## 1: Run the target app
 
 For testing, I created a bunch of test apps "vulnerable" to a path traversal (they're actually not exploitable... but whatever, that's not the point here, just use it agains WebGOAT if you want to pwn some stuff).
@@ -87,6 +104,7 @@ Press CTRL+C to quit
 If it doesn't work, check if you have all dependencies (Flask, basically) installed or use another of the sample apps (except the Go one, that doesn't work because reasons)
 
 
+<a name="instrument_app">
 ## 2: Instrument the app
 
 For this step, you need to be able to debug the process; so either assign the correct capabilities to the binary, or just run this as root.
@@ -108,7 +126,7 @@ Press ENTER to finish the debugging session...
 
 Make sure you have Frida and its Python bindings installed: `pip3 install frida frida-tools`
 
-
+<a name="start_redirector">
 ## 3: Start the redirector
 
 ```
@@ -120,8 +138,12 @@ $ nim c -r server.nim
 Now accepting connections on udp://127.0.0.1:9999
 ```
 
-
+<a name="add_extension">
 ## Step 4: Add the extension to Burp
+
+[!NOTE]
+This step can be jumped over if the Collaborator server is to be used as a redirector.
+
 
 You can use the pre-built JAR in `Burp extension/Fridfiltrator/Fridfiltrator-extension.jar` or build it yourself:
 ```
@@ -132,14 +154,14 @@ BUILD SUCCESSFUL in 13s
 5 actionable tasks: 5 executed
 ```
 
-The output extension is `./app/build/libs/app.jar` and can be installed from Burp under "Extensions" > "Installed" > "Add" > (extension type: "Java" and select the JAR file) >
+The output binary is `./app/build/libs/app.jar` and can be installed from Burp under `Extensions` > `Installed` > `Add` > (extension type: "Java" and select the JAR file)
 
 
 For now, all the output is simply sent to the extensions logging window:
 ![Screenshot of the extension showing some output](img/extension-stdout.png)
 
 
-
+<a name="watch_interactions">
 ## Step 5: Send some requests to the app and watch the interaction
 
 ```
@@ -181,7 +203,7 @@ As a tester, I would see that the first request generates a `read()` to `sample_
 For my last attempt, I send the usual path traversal payload to confirm I can indeed read any file, which does indeed trigger a `read()` of `/etc/passwd`.
 
 
-
+<a name="contributing">
 # Contributing
 
 Do you want to contribute?
@@ -190,7 +212,7 @@ Great! Thank you :)
 I don't really have any requirements (this project isn't really big enough, and my code is not precisely good either, ngl), so feel free to just open a [pull request](https://github.com/Foo-Manroot/fridfiltrator/pulls).
 [Issues](https://github.com/Foo-Manroot/fridfiltrator/issues) are also welcomed and will be addressed to the best of my capacity.
 
-
+<a name="project_structure">
 ## Project structure
 
 This is the main directory structure of the project:
@@ -228,7 +250,7 @@ This is the main directory structure of the project:
         └── 2
 ```
 
-
+<a name="references">
 # References
 
 - https://frida.re/ // https://github.com/frida/frida - The base instrumentation engine used by this project
