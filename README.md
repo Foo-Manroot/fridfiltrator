@@ -17,6 +17,9 @@
 [References](#references)
 
 
+![Extension's UI in all of its glory](img/new-ui.png)
+
+
 <a name="intro"/>
 
 # Dafuq is dis shit?
