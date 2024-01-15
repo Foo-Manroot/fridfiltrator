@@ -156,7 +156,7 @@ Now accepting connections on udp://127.0.0.1:9999
 This step can be jumped over if the Collaborator server is to be used as a redirector.
 
 
-You can use the pre-built JAR in `Burp extension/Fridfiltrator/Fridfiltrator-extension.jar` or build it yourself:
+You can use the pre-built JAR in `Burp extension/Fridfiltrator/Fridfiltrator-extension.jar` or build it yourself (the minimum supported JDK version is [17](https://github.com/PortSwigger/burp-extensions-montoya-api/blob/90ae436355df62728e2710861d9e4e6a4ecdbf4b/build.gradle#L23), afaik):
 ```
 $ cd "Burp extension/Fridfiltrator"
 $ ./gradlew build
