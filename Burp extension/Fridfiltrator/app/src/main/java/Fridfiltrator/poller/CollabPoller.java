@@ -138,7 +138,7 @@ public class CollabPoller extends Poller {
                         
                         // This is the full DNS packets, headers and all
                         byte [] packet = dnsDetails.query ().getBytes ();
-                        
+
                         Message dns = new Message (packet);
 
                         /* The expected query should contain at least 6 tags
@@ -152,6 +152,8 @@ public class CollabPoller extends Poller {
                         */
                         Name question = dns.getQuestion ().getName ();
                         
+                        logger.accept ("Got DNS request: " + question);
+
                         if (question.labels () < 6) {
                             throw new ParseException ("The requested DNS name contained less labels than expected", 0);
                         }
